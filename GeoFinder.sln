@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31129.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoFinder", "GeoFinder\GeoFinder.csproj", "{9F687FE9-E579-407A-B54D-AFE4BE7A5F56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoFinder.Benchmarks", "GeoFinder.Benchmarks\GeoFinder.Benchmarks.csproj", "{EC7183FF-9358-4EAF-B0A7-DB63989F45D2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9F687FE9-E579-407A-B54D-AFE4BE7A5F56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F687FE9-E579-407A-B54D-AFE4BE7A5F56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F687FE9-E579-407A-B54D-AFE4BE7A5F56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F687FE9-E579-407A-B54D-AFE4BE7A5F56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC7183FF-9358-4EAF-B0A7-DB63989F45D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC7183FF-9358-4EAF-B0A7-DB63989F45D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC7183FF-9358-4EAF-B0A7-DB63989F45D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC7183FF-9358-4EAF-B0A7-DB63989F45D2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F44FCC40-E5DD-4FAA-BC6E-5C0540D86443}
+	EndGlobalSection
+EndGlobal
