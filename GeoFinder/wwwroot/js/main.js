@@ -1,5 +1,5 @@
-﻿import FindByIp from "/views/find-by-ip.js";
-import FindByCity from "/views/find-by-city.js";
+﻿import FindByIp from "./views/find-by-ip.js";
+import FindByCity from "./views/find-by-city.js";
 
 const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$");
 
@@ -19,6 +19,17 @@ const navigateTo = url => {
 
 const activeHrefClass = "active";
 
+let currentView = undefined;
+
+const render = async () => {
+    let innerHtml = "";
+    if (currentView) {
+        innerHtml = await currentView.getHtml();
+    }
+
+    document.querySelector("#app").innerHTML = innerHtml;
+};
+
 const router = async () => {
     const routes = [
         { path: "/" },
@@ -26,7 +37,7 @@ const router = async () => {
         { path: "/find-by-city", view: FindByCity }
     ];
 
-    // Test each route for potential match
+    // проверяем каждый путь на потенациальное совпадение
     const potentialMatches = routes.map(route => {
         return {
             route: route,
@@ -43,22 +54,28 @@ const router = async () => {
         };
     }
 
-    // remove active
+    // убираем класс active
     document.querySelectorAll(`a[data-link]`)
         .forEach(atag => atag.classList.remove(activeHrefClass));
-    // set active for <a>
+    // добавляем active для <a>
     const aTag = document.querySelectorAll(`a[href='${match.route.path}']`);
     if (aTag && aTag.length) {
         aTag[0].classList.add(activeHrefClass);
     }
 
-    let innerHtml = "";
-    if (match.route.view) {
-        const view = new match.route.view(getParams(match));
-        innerHtml = await view.getHtml();
+    let view = match.route.view;
+    if (view) {
+        view = new match.route.view({ ...getParams(match), render });
     }
 
-    document.querySelector("#app").innerHTML = innerHtml;
+    // dispose предыдущий роут
+    if (currentView) {
+        await currentView.dispose();
+    }
+    
+    currentView = view;
+
+    render();
 };
 
 window.addEventListener("popstate", router);

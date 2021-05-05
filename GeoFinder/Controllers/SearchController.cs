@@ -2,6 +2,7 @@
 using GeoFinder.Records;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -28,7 +29,7 @@ namespace GeoFinder.Controllers
         }
 
         [HttpGet("city/locations")]
-        public ActionResult<object> GetCity(string city)
+        public ActionResult<List<GeoPointDto>> GetCity(string city)
         {
             byte[] cityByteArr = new byte[24];
             Encoding.ASCII.GetBytes(city, 0, city.Length, cityByteArr, 0);
