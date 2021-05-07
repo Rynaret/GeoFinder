@@ -6,8 +6,5 @@ namespace GeoFinder.Benchmark
     {
         [Benchmark]
         public void Construct() => new DataAccess.GeoBaseConnector();
-
-        //[Benchmark]
-        public void Init() => new DataAccess.GeoBaseConnector().Init();
     }
 }

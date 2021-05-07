@@ -2,21 +2,19 @@
 {
     public struct IPRange
     {
-        public static uint MarshalSize = 12;
-
         /// <summary>
         /// начало диапазона IP адресов
         /// </summary>
-        public uint From { get; set; }
+        public uint From;
 
         /// <summary>
         /// конец диапазона IP адресов
         /// </summary>
-        public uint To { get; set; }
+        public uint To;
 
         /// <summary>
         /// индекс записи о местоположении
         /// </summary>
-        public uint LocationIndex { get; set; }
+        public uint LocationIndex;
     }
 }

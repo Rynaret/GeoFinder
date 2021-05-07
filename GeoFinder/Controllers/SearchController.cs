@@ -31,18 +31,19 @@ namespace GeoFinder.Controllers
         [HttpGet("city/locations")]
         public ActionResult<List<GeoPointDto>> GetCity(string city)
         {
-            byte[] cityByteArr = new byte[24];
-            Encoding.ASCII.GetBytes(city, 0, city.Length, cityByteArr, 0);
+            //byte[] cityByteArr = new byte[24];
+            //Encoding.ASCII.GetBytes(city, 0, city.Length, cityByteArr, 0);
 
             var geoPoints = _geoBaseConnector
                 .GeoPoints
-                .Where(x => x.City.SequenceEqual(cityByteArr))
+                .Where(x => x.CityStr == city)
                 .Select(x => new GeoPointDto(
-                    Encoding.ASCII.GetString(x.Country),
-                    Encoding.ASCII.GetString(x.Region),
-                    Encoding.ASCII.GetString(x.Postal),
-                    Encoding.ASCII.GetString(x.City),
-                    Encoding.ASCII.GetString(x.Organization),
+                    //Encoding.ASCII.GetString(x.Country),
+                    //Encoding.ASCII.GetString(x.Region),
+                    //Encoding.ASCII.GetString(x.Postal),
+                    //Encoding.ASCII.GetString(x.City),
+                    //Encoding.ASCII.GetString(x.Organization),
+                    x.CityStr,
                     x.Latitude,
                     x.Longitude
                 ))
@@ -56,27 +57,27 @@ namespace GeoFinder.Controllers
         {
             var ipAddress = System.Net.IPAddress.Parse(ip);
 
-            var ipRange = _geoBaseConnector
+            IPRange ipRange = _geoBaseConnector
                 .IPRanges
                 .Where(x => x.From <= ipAddress.Address)
                 .Where(x => x.To >= ipAddress.Address)
                 .FirstOrDefault();
+            
+            uint addressInDat = _geoBaseConnector
+                .AddressSortedByCity[ipRange.LocationIndex];
 
-            var addressInDat = _geoBaseConnector
-                .AddressSortedByCity
-                .ElementAtOrDefault((int)ipRange.LocationIndex);
+            uint indexInArray = GeoPoint2.AddressInDatToIndex(addressInDat);
 
-            var geoPoint = _geoBaseConnector
-                .GeoPoints
-                .Where(x => x.AddressInDat == addressInDat)
-                .FirstOrDefault();
+            GeoPoint2 geoPoint = _geoBaseConnector
+                .GeoPoints[indexInArray];
 
             var result = new GeoPointDto(
-                Encoding.ASCII.GetString(geoPoint.Country),
-                Encoding.ASCII.GetString(geoPoint.Region),
-                Encoding.ASCII.GetString(geoPoint.Postal),
-                Encoding.ASCII.GetString(geoPoint.City),
-                Encoding.ASCII.GetString(geoPoint.Organization),
+                //geoPoint.Country,
+                //Encoding.ASCII.GetString(geoPoint.Region),
+                //Encoding.ASCII.GetString(geoPoint.Postal),
+                //Encoding.ASCII.GetString(geoPoint.City),
+                //Encoding.ASCII.GetString(geoPoint.Organization),
+                geoPoint.CityStr,
                 geoPoint.Latitude,
                 geoPoint.Longitude
             );

@@ -1,8 +1,7 @@
-﻿using System.Buffers;
-using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,9 +10,11 @@ namespace GeoFinder.DataAccess
 {
     public class GeoBaseConnector
     {
-        public ConcurrentBag<IPRange> IPRanges = new();
-        public ConcurrentBag<GeoPoint> GeoPoints = new();
-        public LinkedList<uint> AddressSortedByCity = new();
+        public IPRange[] IPRanges;
+        public GeoPoint2[] GeoPoints;
+        public GeoPointCopy[] GeoPointsCopy;
+        public uint[] AddressSortedByCity;
+        public GeoBaseHeader Header;
 
         private static string _pathToFile = "./DataAccess/geobase.dat";
 
@@ -41,81 +42,134 @@ namespace GeoFinder.DataAccess
                 };
             }
 
+            AddressSortedByCity = new uint[header.RecordsCount];
+            GeoPoints = new GeoPoint2[header.RecordsCount];
+            GeoPointsCopy = new GeoPointCopy[header.RecordsCount];
+            IPRanges = new IPRange[header.RecordsCount];
+            
             int parallelism = 4;
-            var tasks = new LinkedList<Task>();
+            int extraItems = header.RecordsCount % 4;
+            Task[] tasks = new Task[parallelism * 3];
             for (int i = 0; i < parallelism; i++)
             {
                 int index = i;
+                //var loadGeoPointsTask = Task.Run(() => LoadGeoPoints(header, index, parallelism));
+                //tasks[i] = (loadGeoPointsTask);
 
-                // 60ms
-                var loadGeoPointsTask = Task.Run(() => LoadGeoPoints(header, index, parallelism));
-                tasks.AddLast(loadGeoPointsTask);
+                //var loadGeoPointsTask = Task.Run(() => Load(header, index, parallelism, header.OffsetLocations, GeoPoints));
+                //tasks[0] = (loadGeoPointsTask);
 
-                //15-16ms
-                var loadIpRangesTask = Task.Run(() => LoadIPRanges(header, index, parallelism));
-                tasks.AddLast(loadIpRangesTask);
+                ////15-16ms
+                //var loadIpRangesTask = Task.Run(() => LoadIPRanges(header, index, parallelism));
+                //tasks.AddLast(loadIpRangesTask);
+
+                //var loadIpRangesTask = Task.Run(() => Load(header, index, parallelism, header.OffsetRanges, IPRanges));
+                //tasks[1] = (loadIpRangesTask);
+
+                var loadIpRangesTask = Task.Run(() => Load(header, index, parallelism, header.OffsetRanges, IPRanges, Marshal.SizeOf<IPRange>()));
+                tasks[i * 3] = (loadIpRangesTask);
+
+                // загружаем индексы записей местоположения вне цикла выше, т к они отсортированны по названию города
+                // и более того IPRange.location_index указывает на индекс записи о местоположении
+                var loadIndexesTask = Task.Run(() => Load(header, index, parallelism, header.OffsetCities, AddressSortedByCity, Marshal.SizeOf<uint>()));
+                tasks[i * 3 + 1] = (loadIndexesTask);
+
+                //var loadGeoPointsTask = Task.Run(() => Load(header, index, parallelism, header.OffsetLocations, GeoPoints, GeoPoint.MarshalSize));
+                //tasks[i * 3 + 2] = (loadGeoPointsTask);
+
+                var loadGeoPointsTask = Task.Run(() => LoadGeoPointsCopy(header, index, parallelism));
+                tasks[i * 3 + 2] = (loadGeoPointsTask);
             }
 
-            // загружаем индексы записей местоположения вне цикла выше, т к они отсортированны по названию города
-            // и более того IPRange.location_index указывает на индекс записи о местоположении
-            var loadIndexesTask = Task.Run(() => LoadIndexes(header, 0, 1));
-            tasks.AddLast(loadIndexesTask);
+            Task.WaitAll(tasks);
 
-            Task.WaitAll(tasks.ToArray());
-        }
-
-        private void LoadIndexes(GeoBaseHeader header, int iteration, int parallelism)
-        {
-            using FileStream stream = File.Open(_pathToFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-            stream.Position = header.OffsetCities + iteration * Marshal.SizeOf<uint>() * header.RecordsCount / parallelism;
-
-            using BinaryReader reader = new(stream);
-            for (int i = 0; i < header.RecordsCount / parallelism; i++)
+            foreach (var item in GeoPoints)
             {
-                AddressSortedByCity.AddLast(reader.ReadUInt32());
+                var r = item.CountryStr;
+                var r2 = item.RegionStr;
+                var r3 = item.PostalStr;
+                var r4 = item.CityStr;
+                var r5 = item.OrganizationStr;
             }
         }
 
-        private void LoadIPRanges(GeoBaseHeader header, int iteration, int parallelism)
+        private static T ReadMemoryMarshal<T>(ReadOnlySpan<byte> array) where T : struct
         {
-            using FileStream stream = File.Open(_pathToFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-            stream.Position = header.OffsetRanges + iteration * IPRange.MarshalSize * header.RecordsCount / parallelism;
+            return MemoryMarshal.Cast<byte, T>(array)[0];
+        }
 
-            using BinaryReader reader = new(stream);
-            for (int i = 0; i < header.RecordsCount / parallelism; i++)
+        static T ReadUsingPointer<T>(ReadOnlySpan<byte> data) where T : unmanaged
+        {
+            unsafe
             {
-                var ipAddress = new IPRange
+                fixed (byte* packet = &data[0])
                 {
-                    From = reader.ReadUInt32(),
-                    To = reader.ReadUInt32(),
-                    LocationIndex = reader.ReadUInt32()
-                };
-                IPRanges.Add(ipAddress);
+                    return *(T*)packet;
+                }
             }
         }
 
-        private async Task LoadGeoPoints(GeoBaseHeader header, int iteration, int parallelism)
+        private void Load<T>(
+            GeoBaseHeader header,
+            int iteration,
+            int parallelism,
+            uint offsetInFile,
+            T[] result,
+            int structSize // вынуждены добавить, так как Marshal.SizeOf<GeoPoint>() плюётся ошибкой
+        ) where T : unmanaged
         {
-            await Task.Delay(0);
             using FileStream stream = File.Open(_pathToFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-            stream.Position = header.OffsetLocations + iteration * GeoPoint.MarshalSize * header.RecordsCount / parallelism;
-            
+            int offset = iteration * header.RecordsCount / parallelism;
+
+            stream.Position = offsetInFile + structSize * offset;
+
+            var buffer = new Span<byte>(new byte[structSize]);
+
+            for (int i = 0; i < header.RecordsCount / parallelism; i++)
+            {
+                stream.Read(buffer);
+                result[i + offset] = (ReadMemoryMarshal<T>(buffer));
+            }
+        }
+
+        private void LoadGeoPointsCopy(GeoBaseHeader header, int iteration, int parallelism)
+        {
+            using FileStream stream = File.Open(_pathToFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+            int offset = iteration * header.RecordsCount / parallelism;
+            stream.Position = header.OffsetLocations + GeoPoint.MarshalSize * offset;
+
+            var buffer = new Span<byte>(new byte[GeoPoint.MarshalSize]);
+
+            for (int i = 0; i < header.RecordsCount / parallelism; i++)
+            {
+                stream.Read(buffer);
+
+                GeoPoints[i + offset] = (ReadMemoryMarshal<GeoPoint2>(buffer));
+            }
+        }
+
+        private void LoadGeoPoints(GeoBaseHeader header, int iteration, int parallelism)
+        {
+            using FileStream stream = File.Open(_pathToFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+            int offset = iteration * header.RecordsCount / parallelism;
+            stream.Position = header.OffsetLocations + GeoPoint.MarshalSize * offset;
+
             using BinaryReader reader = new(stream, Encoding.ASCII);
             for (int i = 0; i < header.RecordsCount / parallelism; i++)
             {
                 var geoPoint = new GeoPoint
                 {
                     AddressInDat = (uint)(stream.Position - header.OffsetLocations),
-                    Country = reader.ReadBytes(8),
-                    Region = reader.ReadBytes(12),
-                    Postal = reader.ReadBytes(12),
-                    City = reader.ReadBytes(24),
-                    Organization = reader.ReadBytes(32),
+                    Country = reader.ReadChars(8),
+                    Region = reader.ReadChars(12),
+                    Postal = reader.ReadChars(12),
+                    City = reader.ReadChars(24),
+                    Organization = reader.ReadChars(32),
 
                     Latitude = reader.ReadSingle(),
                     Longitude = reader.ReadSingle()
                 };
-                GeoPoints.Add(geoPoint);
+                //GeoPointsOld[i + offset] = (geoPoint);
             }
         }
 
@@ -155,11 +209,11 @@ namespace GeoFinder.DataAccess
                 {
                     var geoPoint = new GeoPoint
                     {
-                        Country = reader.ReadBytes(8),
-                        Region = reader.ReadBytes(12),
-                        Postal = reader.ReadBytes(12),
-                        City = reader.ReadBytes(24),
-                        Organization = reader.ReadBytes(32),
+                        //Country = reader.ReadBytes(8),
+                        //Region = reader.ReadBytes(12),
+                        //Postal = reader.ReadBytes(12),
+                        //City = reader.ReadBytes(24),
+                        //Organization = reader.ReadBytes(32),
 
                         Latitude = reader.ReadSingle(),
                         Longitude = reader.ReadSingle()

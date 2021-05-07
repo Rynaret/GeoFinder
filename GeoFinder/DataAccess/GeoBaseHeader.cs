@@ -2,41 +2,39 @@
 {
     public struct GeoBaseHeader
     {
-        public static uint MarshalSize = 60;
-
         /// <summary>
         /// версия база данных
         /// </summary>
-        public int Version { get; set; }
+        public int Version;
 
         /// <summary>
         /// название/префикс для базы данных
         /// </summary>
-        public byte[] Name { get; set; }
+        public byte[] Name;
 
         /// <summary>
         /// время создания базы данных
         /// </summary>
-        public ulong Timestamp { get; set; }
+        public ulong Timestamp;
 
         /// <summary>
         /// общее количество записей
         /// </summary>
-        public int RecordsCount { get; set; }
+        public int RecordsCount;
 
         /// <summary>
         /// смещение относительно начала файла до начала списка записей с геоинформацией
         /// </summary>
-        public uint OffsetRanges { get; set; }
+        public uint OffsetRanges;
 
         /// <summary>
         /// смещение относительно начала файла до начала индекса с сортировкой по названию городов
         /// </summary>
-        public uint OffsetCities { get; set; }
+        public uint OffsetCities;
 
         /// <summary>
         /// смещение относительно начала файла до начала списка записей о местоположении
         /// </summary>
-        public uint OffsetLocations { get; set; }
+        public uint OffsetLocations;
     }
 }

@@ -11,10 +11,10 @@ namespace GeoFinder
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
-            services.AddTransient<GeoBaseConnector>();
+            services.AddSingleton<GeoBaseConnector>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, GeoBaseConnector geoBaseConnector)
         {
             if (env.IsDevelopment())
             {
