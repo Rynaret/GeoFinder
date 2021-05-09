@@ -37,11 +37,13 @@ export default class extends AbstractView {
     findByIP = async (formData) => {
         const ip = formData.get("ip");
 
-        const response = await fetch(`/ip/locations?ip=${ip}`);
-        const result = await response.json();
+        const response = await fetch(`/ip/location?ip=${ip}`);
+        const result = response.status === 200
+            ? [await response.json()]
+            : [];
 
         this.state = { ...this.state, ...{ ip } };
-        this.table.state = { ...this.table.state, ...{ items: [result] } };
+        this.table.state = { ...this.table.state, ...{ items: result } };
 
         await this.params.render();
     }

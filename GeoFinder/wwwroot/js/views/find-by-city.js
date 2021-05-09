@@ -37,7 +37,9 @@ export default class extends AbstractView {
         const city = formData.get("city");
 
         const response = await fetch(`/city/locations?city=${city}`);
-        const result = await response.json();
+        const result = response.status === 200
+            ? await response.json()
+            : [];
 
         this.state = { ...this.state, ...{ city } };
         this.table.state = { ...this.table.state, ...{ items: result } };

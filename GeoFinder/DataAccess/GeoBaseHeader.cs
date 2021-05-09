@@ -1,6 +1,9 @@
-﻿namespace GeoFinder.DataAccess
+﻿using System.Runtime.InteropServices;
+
+namespace GeoFinder.DataAccess
 {
-    public struct GeoBaseHeader
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public unsafe struct GeoBaseHeader
     {
         /// <summary>
         /// версия база данных
@@ -10,7 +13,7 @@
         /// <summary>
         /// название/префикс для базы данных
         /// </summary>
-        public byte[] Name;
+        public fixed byte Name[32];
 
         /// <summary>
         /// время создания базы данных

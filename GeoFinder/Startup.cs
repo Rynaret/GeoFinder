@@ -1,4 +1,5 @@
 using GeoFinder.DataAccess;
+using GeoFinder.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,10 +12,12 @@ namespace GeoFinder
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
             services.AddSingleton<GeoBaseConnector>();
+            services.AddSingleton<SearchService>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, GeoBaseConnector geoBaseConnector)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
