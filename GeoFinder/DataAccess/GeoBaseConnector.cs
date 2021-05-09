@@ -103,7 +103,7 @@ namespace GeoFinder.DataAccess
             uint offsetInFile,
             T[] result,
             in Func<int, int, int> getIndex
-        ) where T : unmanaged
+        ) where T : struct
         {
             using FileStream stream = File.Open(_pathToFile, FileMode.Open, FileAccess.Read, FileShare.Read);
             int offset = iteration * Header.RecordsCount / parallelism;
@@ -123,7 +123,8 @@ namespace GeoFinder.DataAccess
             }
         }
 
-        private static T ReadMemoryMarshal<T>(ReadOnlySpan<byte> array) where T : struct
+        private T ReadMemoryMarshal<T>(ReadOnlySpan<byte> array)
+            where T : struct
         {
             return MemoryMarshal.Cast<byte, T>(array)[0];
         }
