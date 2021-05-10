@@ -7,9 +7,9 @@ namespace GeoFinder.Benchmarks
     /* Intel(R) Core(TM) i5-7300HQ CPU @ 2.50GHz
     |                      Method |           Mean |        Error |       StdDev |
     |---------------------------- |---------------:|-------------:|-------------:|
-    |     GetLocationsByCityNaive | 2,372,652.1 ns | 20,512.64 ns | 17,128.98 ns |
-    | GetLocationsByCityPerfomant |     4,195.5 ns |     56.51 ns |     50.09 ns |
-    |                  GetIPRange |       177.9 ns |      1.89 ns |      1.67 ns |
+    |     GetLocationsByCityNaive | 5,167,152.0 ns | 51,778.21 ns | 48,433.37 ns |
+    | GetLocationsByCityPerfomant |     7,809.5 ns |    119.10 ns |     99.46 ns |
+    |                  GetIPRange |       199.9 ns |      1.88 ns |      1.75 ns |
     */
     public class SearchService
     {
@@ -22,10 +22,6 @@ namespace GeoFinder.Benchmarks
 
             Encoding.ASCII.GetBytes("cit_Uj Dohefykuvevano".AsSpan(), _cityByteArr.Span);
         }
-
-        [Benchmark]
-        public void GetLocationsByCityNaive() => new Services.SearchService(_geoBaseConnector)
-            .GetLocationsByCityNaive(_cityByteArr);
 
         [Benchmark]
         public void GetLocationsByCityPerfomant() => new Services.SearchService(_geoBaseConnector)

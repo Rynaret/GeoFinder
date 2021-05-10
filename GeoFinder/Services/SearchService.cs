@@ -18,69 +18,58 @@ namespace GeoFinder.Services
             _geoBaseConnector = geoBaseConnector;
         }
 
-        public List<GeoPointDto> GetLocationsByCityNaive(Memory<byte> cityByteArr)
-        {
-            return _geoBaseConnector
-                .GeoPoints
-                .Where(x => cityByteArr.Span.SequenceEqual(x.CitySpan))
-                .Select(x => new GeoPointDto(
-                    x.CountrySpan.ToArray(),
-                    x.RegionSpan.ToArray(),
-                    x.PostalSpan.ToArray(),
-                    x.CitySpan.ToArray(),
-                    x.OrganizationSpan.ToArray(),
-                    x.Latitude,
-                    x.Longitude
-                ))
-                .ToList();
-        }
-
-        public List<GeoPointDto> GetLocationsByCityPerfomant(Memory<byte> cityByteArr)
+        /// <summary>
+        /// Версия BinarySearch, которая умеет работать с набором одинаковых значений в массиве
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="array"></param>
+        /// <param name="value"></param>
+        /// <param name="comparer"></param>
+        /// <returns>left - левый индекс, right - правый индекс, null - если элемент не найден</returns>
+        public (int leftIndex, int rightIndex)? RangeBinarySearch<T>(T[] array, in T value, IComparer<T> comparer = null)
         {
             int middleIndex = Array.BinarySearch(
-                array: _geoBaseConnector.GeoPoints,
-                value: new GeoPoint(cityByteArr.Span),
-                comparer: _geoPointCityComparer
+                array: array,
+                value: value,
+                comparer: comparer
             );
 
             if (middleIndex < 0)
             {
-                return new List<GeoPointDto>();
+                return null;
             }
 
-            void FindRight(ref int rightIndex)
+            void FindRight(ref int rightIndex, in T value)
             {
+                rightIndex += 1;
+
                 int newRightIndex = Array.BinarySearch(
-                    _geoBaseConnector.GeoPoints,
-                    rightIndex,
-                    _geoBaseConnector.GeoPoints.Length - rightIndex,
-                    new GeoPoint(cityByteArr.Span),
-                    new GeoPointCityComparer()
+                    array: array,
+                    index: rightIndex,
+                    length: array.Length - rightIndex,
+                    value: value,
+                    comparer: comparer
                 );
 
                 if (newRightIndex < 0)
                 {
-                    return;
-                }
-
-                if (newRightIndex == rightIndex)
-                {
+                    rightIndex -= 1;
                     return;
                 }
 
                 rightIndex = newRightIndex;
 
-                FindRight(ref rightIndex);
+                FindRight(ref rightIndex, value);
             }
 
-            void FindLeft(ref int leftIndex)
+            void FindLeft(ref int leftIndex, in T value)
             {
                 int newLeftIndex = Array.BinarySearch(
-                    _geoBaseConnector.GeoPoints,
-                    0,
-                    leftIndex,
-                    new GeoPoint(cityByteArr.Span),
-                    new GeoPointCityComparer()
+                    array: array,
+                    index: 0,
+                    length: leftIndex,
+                    value: value,
+                    comparer: comparer
                 );
 
                 if (newLeftIndex < 0 || newLeftIndex == leftIndex)
@@ -90,14 +79,34 @@ namespace GeoFinder.Services
 
                 leftIndex = newLeftIndex;
 
-                FindLeft(ref leftIndex);
+                FindLeft(ref leftIndex, value);
             }
 
             int rightIndex = middleIndex;
-            FindRight(ref rightIndex);
+            FindRight(ref rightIndex, value);
 
             int leftIndex = middleIndex;
-            FindLeft(ref leftIndex);
+            FindLeft(ref leftIndex, value);
+
+            return (leftIndex, rightIndex);
+        }
+
+        public List<GeoPointDto> GetLocationsByCityPerfomant(Memory<byte> cityByteArr)
+        {
+            var value = new GeoPoint(cityByteArr.Span);
+
+            (int left, int right)? boundaries = RangeBinarySearch(
+                array: _geoBaseConnector.GeoPoints,
+                value: value,
+                comparer: _geoPointCityComparer
+            );
+
+            if (boundaries is null)
+            {
+                return new List<GeoPointDto>();
+            }
+
+            (int leftIndex, int rightIndex) = boundaries.Value;
 
             /*
             | ArraySegment |         5.822 ns |       0.0816 ns |       0.0637 ns |         5.810 ns |
@@ -124,18 +133,61 @@ namespace GeoFinder.Services
                 .ToList();
         }
 
+        /// <summary>
+        /// Версия BinarySearch, которая умеет находить элемент, подходящий под диапазоном
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="array"></param>
+        /// <param name="value"></param>
+        /// <param name="comparer"></param>
+        /// <returns>
+        /// int - индекс найденого элемента (WARN проверка осуществляется только по начальному значению диапазона,
+        ///     value может не попасть в представленный диапазон по полученному индексу,
+        ///     в таком случае нужна доп проверка в вызывающем коде)
+        /// null - индекс не найден
+        /// </returns>
+        public int? BetweenBinarySearch<T>(T[] array, in T value, IComparer<T> comparer)
+        {
+            int indexForFromComparer = Array.BinarySearch(
+                array: array,
+                value: value,
+                comparer: comparer
+            );
+
+            if (indexForFromComparer == -1)
+            {
+                return null;
+            }
+
+            // Из описания метода BinarySearch:
+            // "the negative number returned is the bitwise
+            // complement of (the index of the last element plus 1)"
+            return indexForFromComparer < 0
+                ? ~indexForFromComparer - 1
+                : indexForFromComparer;
+        }
+
         public IPRange? GetIPRange(IPAddress ip)
         {
-            int index = Array.BinarySearch(
+            int? index = BetweenBinarySearch(
                 array: _geoBaseConnector.IPRanges,
                 value: new IPRange { From = (uint)ip.Address },
                 comparer: _ipRangeFromComparer
             );
 
-            // Из описания метода:
-            // "the negative number returned is the bitwise
-            // complement of (the index of the last element plus 1)"
-            return _geoBaseConnector.IPRanges[~index - 1];
+            if (index is null)
+            {
+                return null;
+            }
+
+            IPRange result = _geoBaseConnector.IPRanges[index.Value];
+
+            if (result.To < ip.Address || result.From > ip.Address)
+            {
+                return null;
+            }
+
+            return result;
         }
 
         public GeoPointDto GetLocationByIp(IPAddress ipAddress)
