@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -10,7 +9,7 @@ namespace GeoFinder.Infrastructure.DataAccess
 {
     public class GeoBaseConnector
     {
-        private readonly string _pathToFile = $"{AppContext.BaseDirectory}DataAccess\\geobase.dat";
+        private readonly string _pathToFile = Path.Combine(AppContext.BaseDirectory, "DataAccess/geobase.dat");
 
         public GeoBaseHeader Header;
 
