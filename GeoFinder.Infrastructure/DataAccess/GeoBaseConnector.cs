@@ -10,7 +10,7 @@ namespace GeoFinder.Infrastructure.DataAccess
 {
     public class GeoBaseConnector
     {
-        private readonly string _pathToFile = $"{Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}\\DataAccess\\geobase.dat";
+        private readonly string _pathToFile = $"{AppContext.BaseDirectory}DataAccess\\geobase.dat";
 
         public GeoBaseHeader Header;
 
