@@ -14,6 +14,11 @@ namespace GeoFinder.Infrastructure
 
         public Location(string city)
         {
+            if (city.Length > CityLength)
+            {
+                throw new ArgumentOutOfRangeException(nameof(city));
+            }
+
             Latitude = 0;
             Longitude = 0;
 

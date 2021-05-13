@@ -1,4 +1,5 @@
-﻿using GeoFinder.Records;
+﻿using GeoFinder.Infrastructure;
+using GeoFinder.Records;
 using GeoFinder.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -20,6 +21,11 @@ namespace GeoFinder.Controllers
         public ActionResult<IEnumerable<LocationDto>> GetLocationsByCity(string city)
         {
             if (string.IsNullOrWhiteSpace(city))
+            {
+                return Ok(Array.Empty<LocationDto>());
+            }
+
+            if (city.Length > Location.CityLength)
             {
                 return Ok(Array.Empty<LocationDto>());
             }
