@@ -37,7 +37,7 @@ const router = async () => {
         { path: "/find-by-city", view: FindByCity }
     ];
 
-    // проверяем каждый путь на потенациальное совпадение
+    // test each route for potential match
     const potentialMatches = routes.map(route => {
         return {
             route: route,
@@ -54,10 +54,10 @@ const router = async () => {
         };
     }
 
-    // убираем класс active
+    // <a class="... -active">
     document.querySelectorAll(`a[data-link]`)
         .forEach(atag => atag.classList.remove(activeHrefClass));
-    // добавляем active для <a>
+    // <a class="... +active">
     const aTag = document.querySelectorAll(`a[href='${match.route.path}']`);
     if (aTag && aTag.length) {
         aTag[0].classList.add(activeHrefClass);
@@ -68,7 +68,7 @@ const router = async () => {
         view = new match.route.view({ ...getParams(match), render });
     }
 
-    // dispose предыдущий роут
+    // dispose previos route
     if (currentView) {
         await currentView.dispose();
     }

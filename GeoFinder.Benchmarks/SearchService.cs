@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using GeoFinder.Infrastructure.DataAccess;
 using System.Linq;
+using System.Net;
 
 namespace GeoFinder.Benchmarks
 {
@@ -34,6 +35,6 @@ namespace GeoFinder.Benchmarks
 
         [Benchmark]
         public void GetIPRange() => new Services.SearchService(_geoBaseConnector)
-            .GetIPRange(System.Net.IPAddress.Parse("192.168.10.67"));
+            .GetIPRange(IPAddress.Parse("192.168.10.67"));
     }
 }

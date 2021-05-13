@@ -9,8 +9,12 @@
     };
 
     getHtml = async () => {
-        if (!this.state.items || !this.state.items.length) {
+        if (!this.state.items) {
             return ``;
+        }
+
+        if (!this.state.items.length){
+            return /*html*/`<div>No data found</div>`
         }
 
         return /*html*/`

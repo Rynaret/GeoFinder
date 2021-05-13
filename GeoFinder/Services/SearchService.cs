@@ -35,7 +35,13 @@ namespace GeoFinder.Services
             // perhaps there is the city, but with extra spaces
             if (boundaries is null)
             {
-                Location closestItem = _geoBaseConnector.Locations[~middleIndex];
+                middleIndex = ~middleIndex;
+                if (middleIndex >= _geoBaseConnector.Locations.Length)
+                {
+                    middleIndex = _geoBaseConnector.Locations.Length - 1;
+                }
+
+                Location closestItem = _geoBaseConnector.Locations[middleIndex];
 
                 Span<byte> cityCopy = closestItem.City.ToArray().AsSpan();
                 cityCopy.TrimEndAnsciiSpace();
@@ -50,11 +56,11 @@ namespace GeoFinder.Services
                             comparer: _locationCityComparer,
                             out _
                         );
+                }
 
-                    if (boundaries is null)
-                    {
-                        yield break;
-                    }
+                if (boundaries is null)
+                {
+                    yield break;
                 }
             }
 
@@ -84,7 +90,7 @@ namespace GeoFinder.Services
         public IPRange? GetIPRange(IPAddress ip)
         {
 #pragma warning disable CS0618 // We have only number without the family type
-            uint targetIpAddress = (uint)ip.Address;
+            uint targetIpAddress = (uint)IPAddress.NetworkToHostOrder((int)ip.Address);
 #pragma warning restore CS0618 // Type or member is obsolete
 
             var value = new IPRange { From = targetIpAddress };
