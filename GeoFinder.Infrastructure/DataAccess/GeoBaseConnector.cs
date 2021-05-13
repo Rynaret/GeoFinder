@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace GeoFinder.DataAccess
+namespace GeoFinder.Infrastructure.DataAccess
 {
     public class GeoBaseConnector
     {
@@ -14,13 +14,15 @@ namespace GeoFinder.DataAccess
         public GeoBaseHeader Header;
 
         public IPRange[] IPRanges;
-        public GeoPoint[] GeoPoints;
-        public uint[] GeoPointsDatPosSortByCity;
+        public Location[] Locations;
+        public uint[] LocationsDatPosSortByCity;
 
         /// <summary>
-        /// Коллекция для более быстрого поиска нужного индекса
+        /// Collecton for indexing (gives better performance during population the Locations in proper order)
+        /// Dictionary.Key - position of record in the dat file relative to Header.offset_locations
+        /// Dictionary.Value - index of record in the collection LocationsDatPosSortByCity
         /// </summary>
-        public Dictionary<uint, int> GeoPointsSortByCityDict;
+        public Dictionary<uint, int> LocationsSortByCityDict;
 
         public GeoBaseConnector(bool autoInit = true)
         {
@@ -37,18 +39,17 @@ namespace GeoFinder.DataAccess
                 Span<byte> buffer = stackalloc byte[Marshal.SizeOf<GeoBaseHeader>()];
 
                 stream.Read(buffer);
-                Header = ReadMemoryMarshal<GeoBaseHeader>(buffer);
+                Header = MemoryMarshal.Cast<byte, GeoBaseHeader>(buffer)[0];
             }
 
-            GeoPointsDatPosSortByCity = new uint[Header.RecordsCount];
-            GeoPointsSortByCityDict = new Dictionary<uint, int>(GeoPointsDatPosSortByCity.Length);
-            GeoPoints = new GeoPoint[Header.RecordsCount];
+            LocationsDatPosSortByCity = new uint[Header.RecordsCount];
+            LocationsSortByCityDict = new Dictionary<uint, int>(LocationsDatPosSortByCity.Length);
+            Locations = new Location[Header.RecordsCount];
             IPRanges = new IPRange[Header.RecordsCount];
 
             var tasks = new Task[parallelism];
 
-            // загружаем индексы записей местоположения первыми, т к они отсортированны по названию города
-            // и более того IPRange.location_index указывает на индекс записи о местоположении
+            // load LocationsDatPosSortByCity first, because they give information about Locations collection sorting
             for (int i = 0; i < parallelism; i++)
             {
                 int iteration = i;
@@ -57,19 +58,19 @@ namespace GeoFinder.DataAccess
                     iteration,
                     parallelism,
                     Header.OffsetCities,
-                    GeoPointsDatPosSortByCity,
+                    LocationsDatPosSortByCity,
                     GetIndex
                 ));
                 tasks[i] = loadIndexesTask;
             }
             Task.WaitAll(tasks);
 
-            for (int i = 0; i < GeoPointsDatPosSortByCity.Length; i++)
+            for (int i = 0; i < LocationsDatPosSortByCity.Length; i++)
             {
-                GeoPointsSortByCityDict.Add(GeoPointsDatPosSortByCity[i], i);
+                LocationsSortByCityDict.Add(LocationsDatPosSortByCity[i], i);
             }
 
-            // загружаем оставшиеся данные
+            // load rest data
             tasks = new Task[parallelism * 2];
             for (int i = 0; i < parallelism; i++)
             {
@@ -84,23 +85,23 @@ namespace GeoFinder.DataAccess
                 ));
                 tasks[i * 2] = loadIpRangesTask;
 
-                var loadGeoPointsTask = Task.Run(() => Load(
+                var loadLocationsTask = Task.Run(() => Load(
                     iteration,
                     parallelism,
                     Header.OffsetLocations,
-                    GeoPoints,
-                    GetGeoPointIndex
+                    Locations,
+                    GetLocationIndex
                 ));
-                tasks[i * 2 + 1] = loadGeoPointsTask;
+                tasks[i * 2 + 1] = loadLocationsTask;
             }
 
             Task.WaitAll(tasks);
         }
 
         private void Load<T>(
-            int iteration,
-            int parallelism,
-            uint offsetInFile,
+            in int iteration,
+            in int parallelism,
+            in uint offsetInFile,
             T[] result,
             in Func<int, int, int> getIndex
         ) where T : struct
@@ -119,14 +120,8 @@ namespace GeoFinder.DataAccess
             for (int i = 0; i < Header.RecordsCount / parallelism + modulo; i++)
             {
                 stream.Read(buffer);
-                result[getIndex(i, offset)] = ReadMemoryMarshal<T>(buffer);
+                result[getIndex(i, offset)] = MemoryMarshal.Cast<byte, T>(buffer)[0];
             }
-        }
-
-        private T ReadMemoryMarshal<T>(ReadOnlySpan<byte> array)
-            where T : struct
-        {
-            return MemoryMarshal.Cast<byte, T>(array)[0];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -144,9 +139,9 @@ namespace GeoFinder.DataAccess
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetGeoPointIndex(int iteration, int offset)
+        private int GetLocationIndex(int iteration, int offset)
         {
-            return GeoPointsSortByCityDict[(uint)((iteration + offset) * Marshal.SizeOf<GeoPoint>())];
+            return LocationsSortByCityDict[(uint)((iteration + offset) * Marshal.SizeOf<Location>())];
         }
     }
 }

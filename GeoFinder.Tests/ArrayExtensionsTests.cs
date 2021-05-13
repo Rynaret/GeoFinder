@@ -1,25 +1,23 @@
-﻿using GeoFinder.Services;
+﻿using GeoFinder.Extensions;
+using GeoFinder.Infrastructure.Abstractions;
 using System.Collections;
 using System.Collections.Generic;
 using Xunit;
 
 namespace GeoFinder.Tests
 {
-    public class SearchServiceTests
+    public class ArrayExtensionsTests
     {
-        private readonly SearchService _searchService;
-
-        public SearchServiceTests()
-        {
-            var dbConnector = new DataAccess.GeoBaseConnector(autoInit: false);
-            _searchService = new SearchService(dbConnector);
-        }
-
         [Theory]
         [ClassData(typeof(RangeBinarySearchTestData))]
         public void RangeBinarySearch(RangeBinarySearchTestData.TestItem data)
         {
-            (int leftIndex, int rightIndex)? result = _searchService.RangeBinarySearch(data.Array, data.SearchValue);
+            int searchValue = data.SearchValue;
+            (int leftIndex, int rightIndex)? result = data.Array.RangeBinarySearch(
+                value: ref searchValue,
+                comparer: new RangeBinarySearchTestData.IntComparer(),
+                out _
+            );
 
             Assert.Equal(data.Expectation, result);
         }
@@ -28,26 +26,13 @@ namespace GeoFinder.Tests
         [ClassData(typeof(BetweenBinarySearchTestData))]
         public void BetweenBinarySearch(BetweenBinarySearchTestData.TestItem data)
         {
-            int? result = _searchService.BetweenBinarySearch(
-                array: data.Array,
-                value: (from: data.SearchValue, to: default),
+            (int from, int to) searchValue = (from: data.SearchValue, to: default);
+            int? result = data.Array.BetweenBinarySearch(
+                value: ref searchValue,
                 comparer: new BetweenBinarySearchTestData.TestItemFromComparer()
             );
 
             Assert.Equal(data.Expectation, result);
-            
-            // доп проверка, для случаев вне диапазонов
-            if (result.HasValue)
-            {
-                bool arrayItemFound = true;
-                (int from, int to) searchedValue = data.Array[result.Value];
-                if (searchedValue.to < data.SearchValue || searchedValue.from > data.SearchValue)
-                {
-                    arrayItemFound = false;
-                }
-
-                Assert.Equal(data.ExpectationOfTest, arrayItemFound);
-            }
         }
     }
 
@@ -58,6 +43,14 @@ namespace GeoFinder.Tests
             public (int leftIndex, int rightIndex)? Expectation { get; set; }
             public int[] Array { get; set; }
             public int SearchValue { get; set; }
+        }
+
+        public class IntComparer : IRefComparer<int>
+        {
+            public int Compare(ref int x, ref int y)
+            {
+                return x.CompareTo(y);
+            }
         }
 
         public IEnumerator<object[]> GetEnumerator()
@@ -188,14 +181,13 @@ namespace GeoFinder.Tests
         public class TestItem
         {
             public int? Expectation { get; set; }
-            public bool ExpectationOfTest { get; set; } = true;
             public (int from, int to)[] Array { get; set; }
             public int SearchValue { get; set; }
         }
 
-        public class TestItemFromComparer : IComparer<(int from, int to)>
+        public class TestItemFromComparer : IRefComparer<(int from, int to)>
         {
-            public int Compare((int from, int to) x, (int from, int to) y)
+            public int Compare(ref (int from, int to) x, ref (int from, int to) y)
             {
                 return x.from.CompareTo(y.from);
             }
@@ -237,7 +229,6 @@ namespace GeoFinder.Tests
                 {
                     Array = new[] { (1, 3), (4, 6), (7, 9) },
                     Expectation = null,
-                    ExpectationOfTest = false,
                     SearchValue = 0
                 }
             };
@@ -276,7 +267,6 @@ namespace GeoFinder.Tests
                 {
                     Array = new[] { (1, 3), (5, 6), (7, 9) },
                     Expectation = 0,
-                    ExpectationOfTest = false,
                     SearchValue = 4
                 }
             };
@@ -315,7 +305,6 @@ namespace GeoFinder.Tests
                 {
                     Array = new[] { (1, 3), (4, 6), (7, 11) },
                     Expectation = 2,
-                    ExpectationOfTest = false,
                     SearchValue = 12
                 }
             };

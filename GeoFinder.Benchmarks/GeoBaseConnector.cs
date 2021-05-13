@@ -3,28 +3,21 @@
 namespace GeoFinder.Benchmark
 {
     /* Intel(R) Core(TM) i5-7300HQ CPU @ 2.50GHz
-    |      Method |     Mean |    Error |   StdDev |
-    |------------ |---------:|---------:|---------:|
-    |  Construct1 | 43.28 ms | 0.735 ms | 0.651 ms |
-    |  Construct2 | 26.22 ms | 0.148 ms | 0.138 ms |
-    |  Construct4 | 20.05 ms | 0.335 ms | 0.372 ms |
-    |  Construct8 | 21.44 ms | 0.299 ms | 0.280 ms |
-    | Construct16 | 22.21 ms | 0.197 ms | 0.184 ms |
-    | Construct32 | 23.54 ms | 0.102 ms | 0.091 ms |
+    |    Method | Parallelism |     Mean |    Error |   StdDev |
+    |---------- |------------ |---------:|---------:|---------:|
+    | Construct |           1 | 55.29 ms | 0.861 ms | 0.764 ms |
+    | Construct |           2 | 31.29 ms | 0.591 ms | 0.553 ms |
+    | Construct |           4 | 24.29 ms | 0.464 ms | 0.552 ms |
+    | Construct |           8 | 25.06 ms | 0.334 ms | 0.296 ms |
+    | Construct |          16 | 26.66 ms | 0.531 ms | 0.632 ms |
+    | Construct |          32 | 29.09 ms | 0.234 ms | 0.183 ms |
     */
     public class GeoBaseConnector
     {
-        public void Construct1() => new DataAccess.GeoBaseConnector(autoInit: false).Init(1);
-
-        public void Construct2() => new DataAccess.GeoBaseConnector(autoInit: false).Init(2);
+        [Params(/*1, 2,*/ 4/*, 8, 16, 32*/)]
+        public int Parallelism { get; set; }
 
         [Benchmark]
-        public void Construct4() => new DataAccess.GeoBaseConnector(autoInit: false).Init(4);
-
-        public void Construct8() => new DataAccess.GeoBaseConnector(autoInit: false).Init(8);
-
-        public void Construct16() => new DataAccess.GeoBaseConnector(autoInit: false).Init(16);
-
-        public void Construct32() => new DataAccess.GeoBaseConnector(autoInit: false).Init(32);
+        public void Construct() => new Infrastructure.DataAccess.GeoBaseConnector(autoInit: false).Init(Parallelism);
     }
 }

@@ -1,4 +1,4 @@
-using GeoFinder.DataAccess;
+using GeoFinder.Infrastructure.DataAccess;
 using GeoFinder.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoFinder", "GeoFinder\GeoF
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoFinder.Benchmarks", "GeoFinder.Benchmarks\GeoFinder.Benchmarks.csproj", "{EC7183FF-9358-4EAF-B0A7-DB63989F45D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoFinder.Tests", "GeoFinder.Tests\GeoFinder.Tests.csproj", "{27F040E1-F753-43C5-851F-D4FBDF2C8A9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoFinder.Tests", "GeoFinder.Tests\GeoFinder.Tests.csproj", "{27F040E1-F753-43C5-851F-D4FBDF2C8A9B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoFinder.Infrastructure", "GeoFinder.Infrastructure\GeoFinder.Infrastructure.csproj", "{565BA8E5-EA11-426A-8E27-B73E7B5D3AFD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{27F040E1-F753-43C5-851F-D4FBDF2C8A9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{27F040E1-F753-43C5-851F-D4FBDF2C8A9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27F040E1-F753-43C5-851F-D4FBDF2C8A9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{565BA8E5-EA11-426A-8E27-B73E7B5D3AFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{565BA8E5-EA11-426A-8E27-B73E7B5D3AFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{565BA8E5-EA11-426A-8E27-B73E7B5D3AFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{565BA8E5-EA11-426A-8E27-B73E7B5D3AFD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

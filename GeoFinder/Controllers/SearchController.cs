@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 
 namespace GeoFinder.Controllers
 {
@@ -18,28 +17,25 @@ namespace GeoFinder.Controllers
         }
 
         [HttpGet("city/locations")]
-        public ActionResult<List<GeoPointDto>> GetLocationsByCity(string city)
+        public ActionResult<IEnumerable<LocationDto>> GetLocationsByCity(string city)
         {
             if (string.IsNullOrWhiteSpace(city))
             {
-                return new List<GeoPointDto>();
+                return Ok(Array.Empty<LocationDto>());
             }
 
-            var cityByteArr = new Memory<byte>(new byte[24]);
-            Encoding.ASCII.GetBytes(city.AsSpan(), cityByteArr.Span);
-
-            return _searchService.GetLocationsByCityPerfomant(cityByteArr);
+            return Ok(_searchService.GetLocationsByCity(city));
         }
 
         [HttpGet("ip/location")]
-        public ActionResult<GeoPointDto> GetLocationByIp(string ip)
+        public ActionResult<LocationDto> GetLocationByIp(string ip)
         {
             if (false == IPAddress.TryParse(ip, out IPAddress ipAddress))
             {
-                return null;
+                return Ok(null);
             }
 
-            return _searchService.GetLocationByIp(ipAddress);
+            return Ok(_searchService.GetLocationByIp(ipAddress));
         }
     }
 }

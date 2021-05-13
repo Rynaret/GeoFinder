@@ -1,30 +1,31 @@
-﻿using System.Collections.Generic;
+﻿using GeoFinder.Infrastructure.Abstractions;
 using System.Runtime.InteropServices;
 
-namespace GeoFinder.DataAccess
+namespace GeoFinder.Infrastructure
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct IPRange
     {
         /// <summary>
-        /// начало диапазона IP адресов
+        /// IP address from
         /// </summary>
         public uint From;
 
         /// <summary>
-        /// конец диапазона IP адресов
+        /// IP address to
         /// </summary>
         public uint To;
 
         /// <summary>
-        /// индекс записи о местоположении
+        /// The location index
         /// </summary>
         public uint LocationIndex;
     }
 
-    public class IPRangeFromComparer : IComparer<IPRange>
+    public class IPRangeFromComparer : IRefComparer<IPRange>
     {
-        public int Compare(IPRange x, IPRange y)
+        // refs version about 7% faster (compare to IComparer)
+        public int Compare(ref IPRange x, ref IPRange y)
         {
             return x.From.CompareTo(y.From);
         }

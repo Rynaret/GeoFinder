@@ -1,25 +1,26 @@
 ﻿using GeoFinder.JsonConverters;
+using System;
 using System.Text.Json.Serialization;
 
 namespace GeoFinder.Records
 {
-    public record GeoPointDto
+    public record LocationDto
     {
-        public GeoPointDto(
-            byte[] Country,
-            byte[] Region,
-            byte[] Postal,
-            byte[] City,
-            byte[] Organization,
+        public LocationDto(
+            ReadOnlySpan<byte> Country,
+            ReadOnlySpan<byte> Region,
+            ReadOnlySpan<byte> Postal,
+            ReadOnlySpan<byte> City,
+            ReadOnlySpan<byte> Organization,
             float Latitude,
             float Longitude
         )
         {
-            this.Country = Country;
-            this.Region = Region;
-            this.Postal = Postal;
-            this.City = City;
-            this.Organization = Organization;
+            this.Country = Country.ToArray();
+            this.Region = Region.ToArray();
+            this.Postal = Postal.ToArray();
+            this.City = City.ToArray();
+            this.Organization = Organization.ToArray();
             this.Latitude = Latitude;
             this.Longitude = Longitude;
         }

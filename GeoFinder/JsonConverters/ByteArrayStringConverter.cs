@@ -14,14 +14,16 @@ namespace GeoFinder.JsonConverters
         public override void Write(Utf8JsonWriter writer, byte[] value, JsonSerializerOptions options)
         {
             Span<byte> span = value.AsSpan();
-            int emptyBytePosition = span.Length;
+
+            int emptyBytePosition = span.Length - 1;
             for (; emptyBytePosition > 0; emptyBytePosition--)
             {
-                if (span[emptyBytePosition - 1] != 0)
+                if (span[emptyBytePosition] != 0)
                 {
                     break;
                 }
             }
+            emptyBytePosition++;
 
             writer.WriteStringValue(span.Slice(0, emptyBytePosition));
         }

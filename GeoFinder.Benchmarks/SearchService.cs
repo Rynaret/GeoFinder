@@ -1,31 +1,36 @@
 ﻿using BenchmarkDotNet.Attributes;
-using System;
-using System.Text;
+using GeoFinder.Infrastructure.DataAccess;
+using System.Linq;
 
 namespace GeoFinder.Benchmarks
 {
     /* Intel(R) Core(TM) i5-7300HQ CPU @ 2.50GHz
-    |                      Method |           Mean |        Error |       StdDev |
-    |---------------------------- |---------------:|-------------:|-------------:|
-    |     GetLocationsByCityNaive | 5,167,152.0 ns | 51,778.21 ns | 48,433.37 ns |
-    | GetLocationsByCityPerfomant |     7,809.5 ns |    119.10 ns |     99.46 ns |
-    |                  GetIPRange |       199.9 ns |      1.88 ns |      1.75 ns |
+    |                    Method |        Mean |     Error |    StdDev |
+    |-------------------------- |------------:|----------:|----------:|
+    |        GetLocationsByCity |    41.06 ns |  0.665 ns |  0.622 ns |
+    | GetLocationsByCityToArray | 2,249.88 ns | 28.797 ns | 26.936 ns |
+    |                GetIPRange |   186.80 ns |  2.845 ns |  2.794 ns |
     */
     public class SearchService
     {
-        private readonly DataAccess.GeoBaseConnector _geoBaseConnector;
-        private readonly Memory<byte> _cityByteArr = new(new byte[24]);
+        private readonly GeoBaseConnector _geoBaseConnector;
+        private readonly string _city;
 
         public SearchService()
         {
-            _geoBaseConnector = new DataAccess.GeoBaseConnector();
+            _geoBaseConnector = new GeoBaseConnector();
 
-            Encoding.ASCII.GetBytes("cit_Uj Dohefykuvevano".AsSpan(), _cityByteArr.Span);
+            _city = "cit_Uj Dohefykuvevano";
         }
 
         [Benchmark]
-        public void GetLocationsByCityPerfomant() => new Services.SearchService(_geoBaseConnector)
-            .GetLocationsByCityPerfomant(_cityByteArr);
+        public void GetLocationsByCity() => new Services.SearchService(_geoBaseConnector)
+            .GetLocationsByCity(_city);
+
+        [Benchmark]
+        public void GetLocationsByCityToArray() => new Services.SearchService(_geoBaseConnector)
+            .GetLocationsByCity(_city)
+            .ToArray();
 
         [Benchmark]
         public void GetIPRange() => new Services.SearchService(_geoBaseConnector)

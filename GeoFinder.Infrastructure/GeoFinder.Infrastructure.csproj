@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -13,7 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GeoFinder.Infrastructure\GeoFinder.Infrastructure.csproj" />
+    <None Remove="DataAccess\geobase.dat" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="DataAccess\geobase.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
