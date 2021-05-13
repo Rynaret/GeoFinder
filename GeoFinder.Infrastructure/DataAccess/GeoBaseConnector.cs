@@ -126,7 +126,7 @@ namespace GeoFinder.Infrastructure.DataAccess
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int CalculateModulo(int parallelism, int iteration, int recordCount)
+        private static int CalculateModulo(int parallelism, int iteration, int recordCount)
         {
             return parallelism - 1 - iteration == 0
                 ? recordCount % parallelism
