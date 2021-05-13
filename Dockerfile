@@ -3,7 +3,7 @@
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS base
 WORKDIR /app
-EXPOSE 80
+#EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
@@ -19,5 +19,5 @@ RUN dotnet publish "GeoFinder.csproj" -c Release -o /app/publish
 
 FROM base AS final
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "GeoFinder.dll"]
-#CMD ASPNETCORE_URLS=http://*:$PORT dotnet GeoFinder.dll
+#ENTRYPOINT ["dotnet", "GeoFinder.dll"]
+CMD ASPNETCORE_URLS=http://*:$PORT dotnet GeoFinder.dll
