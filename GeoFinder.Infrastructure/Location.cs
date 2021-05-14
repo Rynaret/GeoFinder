@@ -70,27 +70,7 @@ namespace GeoFinder.Infrastructure
 
 #if DEBUG // for testing purposes
         [Obsolete("WARN! Available only in Debug for testing purposes")]
-        public string CityStr
-        {
-            get
-            {
-                // a bit faster (10ns) than => fixed (byte* city = _city) { return new string((sbyte*)city); }
-                fixed (byte* city = _city)
-                {
-                    int emptyBytePosition = 23;
-                    for (; emptyBytePosition >= 0; emptyBytePosition--)
-                    {
-                        if (city[emptyBytePosition] != 0)
-                        {
-                            break;
-                        }
-                    }
-
-                    emptyBytePosition++;
-                    return new string((sbyte*)city, 0, emptyBytePosition, Encoding.ASCII);
-                }
-            }
-        }
+        public string CityStr { get { fixed (byte* city = _city) { return new string((sbyte*)city); } } }
 #endif
     }
 
@@ -110,7 +90,6 @@ namespace GeoFinder.Infrastructure
             method: _sequenceCompareToMethod
         );
 
-        // version with refs about 30% faster (compare to IComparer)
         public unsafe int Compare(ref Location x, ref Location y)
         {
             // about 25% faster than

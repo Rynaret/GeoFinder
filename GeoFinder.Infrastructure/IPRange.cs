@@ -24,7 +24,6 @@ namespace GeoFinder.Infrastructure
 
     public class IPRangeFromComparer : IRefComparer<IPRange>
     {
-        // refs version about 7% faster (compare to IComparer)
         public int Compare(ref IPRange x, ref IPRange y)
         {
             return x.From.CompareTo(y.From);
