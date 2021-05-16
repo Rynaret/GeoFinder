@@ -73,6 +73,7 @@ export class App extends ShadowElementBase {
         }
 
         history.pushState(null, newRoute.title, newRoute.path);
+        document.title = newRoute.title;
 
         this.route(newRoute);
     }
