@@ -14,16 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="wwwroot\index.html" />
-    <Content Remove="wwwroot\js.f5610b82.js" />
-    <Content Remove="wwwroot\js.f5610b82.js.map" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="wwwroot\index.html" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
   </ItemGroup>
 
