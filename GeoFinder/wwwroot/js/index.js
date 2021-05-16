@@ -73,7 +73,6 @@ export class App extends ShadowElementBase {
         }
 
         history.pushState(null, newRoute.title, newRoute.path);
-        document.title = newRoute.title;
 
         this.route(newRoute);
     }
@@ -91,6 +90,7 @@ export class App extends ShadowElementBase {
     route(newRoute) {
         const { shadowRoot, menu } = this;
     
+        document.title = newRoute.title;
         menu.setActiveRoute(newRoute);
     
         const content = shadowRoot.querySelector("#content");
