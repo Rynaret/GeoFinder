@@ -1,92 +1,132 @@
-﻿import FindByIp from "./views/find-by-ip.js";
-import FindByCity from "./views/find-by-city.js";
+import { ShadowElementBase } from "./abstractions/shadow-element-base.js";
+import { Menu } from "./components/menu.js";
+import { Home } from "./views/home.js";
+import { FindByIp } from "./views/find-by-ip.js";
+import { FindByCity } from "./views/find-by-city.js";
 
-const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$");
+export const routes = [
+    {
+        path: "/",
+        brand: true,
+        component: Home,
+        title: "GeoFinder",
+        text: "GeoFinder"
+    },
+    {
+        path: "/find-by-ip",
+        component: FindByIp,
+        title: "GeoFinder: Find by IP",
+        text: "Find by IP"
+    },
+    {
+        path: "/find-by-city",
+        component: FindByCity,
+        title: "GeoFinder: Find by city name",
+        text: "Find by city"
+    }
+];
 
-const getParams = match => {
-    const values = match.result.slice(1);
-    const keys = Array.from(match.route.path.matchAll(/:(\w+)/g)).map(result => result[1]);
+const brandRoute = routes.find(route => route.brand);
 
-    return Object.fromEntries(keys.map((key, i) => {
-        return [key, values[i]];
-    }));
-};
+const template = document.createElement('template');
+template.innerHTML = /*html*/`
+<div class="container">
+    <header>
+        <nav class="nav">
+            <a class="brand" href="${brandRoute.path}" data-link="${brandRoute.title}">
+                ${brandRoute.text}
+            </a>
+        </nav>
+    </header>
+    <div class="row">
+        <div class="col-2" id="menu">
+        </div>
+        <div class="col-10" id="content">
+        </div>
+    </div>
+</div>
+`;
 
-const navigateTo = url => {
-    history.pushState(null, null, url);
-    router();
-};
+export class App extends ShadowElementBase {
+    constructor() {
+        super();
 
-const activeHrefClass = "active";
+        this.link = this.link.bind(this);
+        this.route = this.route.bind(this);
 
-let currentView = undefined;
+        const { shadowRoot } = this;
 
-const render = async () => {
-    let innerHtml = "";
-    if (currentView) {
-        innerHtml = await currentView.getHtml();
+        const templateNode = document.importNode(template.content, true);
+
+        shadowRoot.appendChild(templateNode);
     }
 
-    document.querySelector("#app").innerHTML = innerHtml;
-};
+    link(e) {
+        e.preventDefault();
 
-const router = async () => {
-    const routes = [
-        { path: "/" },
-        { path: "/find-by-ip", view: FindByIp },
-        { path: "/find-by-city", view: FindByCity }
-    ];
+        const prevPath = location.pathname;
 
-    // test each route for potential match
-    const potentialMatches = routes.map(route => {
-        return {
-            route: route,
-            result: location.pathname.match(pathToRegex(route.path))
-        };
-    });
+        const newRoute = this.findNewRoute(e.target.pathname);
 
-    let match = potentialMatches.find(potentialMatch => potentialMatch.result !== null);
-
-    if (!match) {
-        match = {
-            route: routes[0],
-            result: [location.pathname]
-        };
-    }
-
-    // <a class="... -active">
-    document.querySelectorAll(`a[data-link]`)
-        .forEach(atag => atag.classList.remove(activeHrefClass));
-    // <a class="... +active">
-    const aTag = document.querySelectorAll(`a[href='${match.route.path}']`);
-    if (aTag && aTag.length) {
-        aTag[0].classList.add(activeHrefClass);
-    }
-
-    let view = match.route.view;
-    if (view) {
-        view = new match.route.view({ ...getParams(match), render });
-    }
-
-    // dispose previos route
-    if (currentView) {
-        await currentView.dispose();
-    }
-    
-    currentView = view;
-
-    render();
-};
-
-window.addEventListener("popstate", router);
-
-document.addEventListener("DOMContentLoaded", () => {
-    document.body.addEventListener("click", e => {
-        if (e.target.matches("[data-link]")) {
-            e.preventDefault();
-            navigateTo(e.target.href);
+        if (prevPath === newRoute.path) {
+            return;
         }
-    });
 
-    router();
-});
+        history.pushState(null, newRoute.title, newRoute.path);
+
+        this.route(newRoute);
+    }
+
+    findNewRoute(pathname) {
+        let finding = routes.find(route => pathname === route.path);
+    
+        if (!finding) {
+            finding = routes.find(route => route.brand);
+        }
+
+        return finding;
+    }
+
+    route(newRoute) {
+        const { shadowRoot, menu } = this;
+    
+        menu.setActiveRoute(newRoute);
+    
+        const content = shadowRoot.querySelector("#content");
+
+        while (content.firstChild) {
+            content.removeChild(content.firstChild);
+        }
+    
+        content.appendChild(new newRoute.component());
+    }
+
+    connectedCallback() {
+        this.menu = new Menu({ routes });
+
+        const { shadowRoot, menu } = this;
+
+        shadowRoot.querySelector("#menu").appendChild(menu);
+
+        shadowRoot.querySelector("[data-link]").addEventListener("click", this.link);
+        menu.shadowRoot.querySelectorAll("[data-link]")
+            .forEach(item => {
+                item.addEventListener("click", this.link);
+            });
+
+        const currentRoute = this.findNewRoute();
+        this.route(currentRoute);
+    }
+
+    disconnectedCallback() {
+        const { menu } = this;
+
+        shadowRoot.querySelector("[data-link]").removeEventListener("click", this.link);
+        menu.shadowRoot.querySelectorAll("[data-link]")
+            .forEach(item => {
+                item.removeEventListener("click", this.link);
+            });
+    }
+}
+
+customElements.define("geo-finder-app", App);

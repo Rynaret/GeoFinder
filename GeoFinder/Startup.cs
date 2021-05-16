@@ -11,6 +11,8 @@ namespace GeoFinder
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddResponseCompression();
+            
             services.AddControllersWithViews();
 
             services.AddSingleton<GeoBaseConnector>();
@@ -19,18 +21,21 @@ namespace GeoFinder
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseResponseCompression();
+            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseDefaultFiles();
             app.UseStaticFiles();
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapDefaultControllerRoute();
-                endpoints.MapFallbackToController("Index", "Home");
+                endpoints.MapFallbackToFile("index.html");
             });
         }
     }

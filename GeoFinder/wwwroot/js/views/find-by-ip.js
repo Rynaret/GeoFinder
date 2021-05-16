@@ -1,12 +1,28 @@
-﻿import AbstractView from "./abstract-view.js";
-import Table from "../components/table.js";
+﻿import { ShadowElementBase } from "../abstractions/shadow-element-base.js";
+import { SimpleTable } from "../components/table.js";
 
-export default class extends AbstractView {
-    constructor(params) {
-        super(params);
-        this.setTitle("Find by IP");
-        this.table = new Table({
-            headers: [
+const template = document.createElement('template');
+template.innerHTML = /*html*/`
+<form>
+    <fieldset>
+        <legend>Search by IP</legend>
+        <p>
+            <input type="search" placeholder="Enter IP" name="ip">
+        </p>
+        <p>
+            <button type="submit" class="button outline primary">Search</button>
+        </p>
+    </fieldset>
+</form>
+`;
+
+export class FindByIp extends ShadowElementBase {
+    constructor() {
+        super();
+        this.submit = this.submit.bind(this);
+
+        this.table = new SimpleTable({
+            header: [
                 "Country",
                 "Region",
                 "Postal",
@@ -14,27 +30,20 @@ export default class extends AbstractView {
                 "Organization",
                 "Latitude",
                 "Longitude",
-            ],
-            items: undefined
+            ]
         });
 
-        document.addEventListener('submit', this.onsubmit);
+        const { shadowRoot, table } = this;
+
+        const templateNode = document.importNode(template.content, true);
+        shadowRoot.appendChild(templateNode);
+        shadowRoot.appendChild(table);
     }
 
-    state = {
-        ip: "",
-        results: undefined
-    };
-
-    onsubmit = async (e) => {
+    async submit(e) {
         e.preventDefault();
 
-        if(e.target && e.target.id== `${this.guid}_submit_form`){
-            await this.findByIP(new FormData(e.target));
-        }
-    }
-
-    findByIP = async (formData) => {
+        const formData = new FormData(e.target);
         const ip = formData.get("ip");
 
         const response = await fetch(`/ip/location?ip=${ip}`);
@@ -42,31 +51,20 @@ export default class extends AbstractView {
             ? [await response.json()]
             : [];
 
-        this.state = { ...this.state, ...{ ip } };
-        this.table.state = { ...this.table.state, ...{ items: result } };
-
-        await this.params.render();
+        this.table.items = result;
     }
 
-    getHtml = async () => {
-        return /*html*/`
-            <form id="${this.guid}_submit_form">
-                <fieldset>
-                    <legend>Search by IP</legend>
-                    <p>
-                        <input type="search" placeholder="Enter IP" name="ip" value="${this.state.ip}">
-                    </p>
-                    <p>
-                        <button type="submit" class="button outline primary">Search</button>
-                    </p>
-                </fieldset>
-            </form>
+    connectedCallback() {
+        const { shadowRoot } = this;
 
-            ${await this.table.getHtml()}
-        `;
+        shadowRoot.querySelector("form").addEventListener("submit", this.submit);
     }
 
-    dispose = async () => {
-        document.removeEventListener('submit', onsubmit);
+    disconnectedCallback() {
+        const { shadowRoot } = this;
+
+        shadowRoot.querySelector('form').removeEventListener('submit', this.submit);
     }
 }
+
+customElements.define("find-by-ip-view", FindByIp);

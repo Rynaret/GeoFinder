@@ -1,12 +1,29 @@
-﻿import AbstractView from "./abstract-view.js";
-import Table from "../components/table.js";
+﻿import { ShadowElementBase } from "../abstractions/shadow-element-base.js";
+import { SimpleTable } from "../components/table.js";
 
-export default class extends AbstractView {
-    constructor(params) {
-        super(params);
-        this.setTitle("Find by city name");
-        this.table = new Table({
-            headers: [
+const template = document.createElement('template');
+template.innerHTML = /*html*/`
+    <form>
+        <fieldset>
+            <legend>Search by city name</legend>
+            <p>
+                <input type="search" placeholder="Enter city name" name="city">
+            </p>
+            <p>
+                <button type="submit" class="button outline primary">Search</button>
+            </p>
+        </fieldset>
+    </form>
+`;
+
+export class FindByCity extends ShadowElementBase {
+    constructor() {
+        super();
+
+        this.submit = this.submit.bind(this);
+
+        this.table = new SimpleTable({
+            header: [
                 "Country",
                 "Region",
                 "Postal",
@@ -14,26 +31,20 @@ export default class extends AbstractView {
                 "Organization",
                 "Latitude",
                 "Longitude",
-            ],
-            items: undefined
+            ]
         });
 
-        document.addEventListener('submit', this.onsubmit);
+        const { shadowRoot, table } = this;
+
+        const templateNode = document.importNode(template.content, true);
+        shadowRoot.appendChild(templateNode);
+        shadowRoot.appendChild(table);
     }
 
-    state = {
-        city: ""
-    };
-
-    onsubmit = async (e) => {
+    async submit(e) {
         e.preventDefault();
 
-        if(e.target && e.target.id== `${this.guid}_submit_form`){
-            await this.findByCity(new FormData(e.target));
-        }
-    }
-
-    findByCity = async (formData) => {
+        const formData = new FormData(e.target);
         const city = formData.get("city");
 
         const response = await fetch(`/city/locations?city=${city}`);
@@ -41,31 +52,20 @@ export default class extends AbstractView {
             ? await response.json()
             : [];
 
-        this.state = { ...this.state, ...{ city } };
-        this.table.state = { ...this.table.state, ...{ items: result } };
-
-        await this.params.render();
+        this.table.items = result;
     }
 
-    getHtml = async () => {
-        return /*html*/`
-            <form id="${this.guid}_submit_form">
-                <fieldset>
-                    <legend>Search by city name</legend>
-                    <p>
-                        <input type="search" placeholder="Enter city name" name="city" value="${this.state.city}">
-                    </p>
-                    <p>
-                        <button type="submit" class="button outline primary">Search</button>
-                    </p>
-                </fieldset>
-            </form>
+    connectedCallback() {
+        const { shadowRoot } = this;
 
-            ${await this.table.getHtml()}
-        `;
+        shadowRoot.querySelector("form").addEventListener("submit", this.submit);
     }
 
-    dispose = async () => {
-        document.removeEventListener('submit', onsubmit);
+    disconnectedCallback() {
+        const { shadowRoot } = this;
+
+        shadowRoot.querySelector('form').removeEventListener('submit', this.submit);
     }
 }
+
+customElements.define("find-by-city-view", FindByCity);
