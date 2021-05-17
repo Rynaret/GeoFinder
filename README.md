@@ -3,7 +3,7 @@
 # GeoFinder
 
 GeoFinder app can find locations by input IP or city name.
-You can [find demo here](https://geo-finder.herokuapp.com/find-by-city).
+You can find demo [http/1 version on heroku](https://geo-finder.herokuapp.com/find-by-city) or [http/2 version on Azure](https://geo-finder.azurewebsites.net/).
 
 ## Goals
 
